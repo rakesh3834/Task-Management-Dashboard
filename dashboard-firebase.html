@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Dashboard - Shared</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; margin-bottom: 30px; font-size: 2.2em; text-align: center; font-weight: 300; }
+    .tabs { display: flex; gap: 5px; margin-bottom: 30px; border-bottom: 2px solid #ecf0f1; flex-wrap: wrap; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+    .tab { padding: 12px 24px; cursor: pointer; background: none; border: none; font-size: 14px; color: #34495e; font-weight: 500; border-radius: 6px; transition: all 0.3s; }
+    .tab:hover { background: #e9ecef; }
+    .tab.active { background: #f58220; color: white; font-weight: 600; box-shadow: 0 2px 8px rgba(245,130,32,0.3); }
+    .section { display: none; animation: fadeIn 0.3s; }
+    .section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 14px; }
+    input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px; transition: border-color 0.3s; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #f58220; box-shadow: 0 0 0 3px rgba(245,130,32,0.1); }
+    button { background: linear-gradient(135deg, #f58220, #e67e22); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; box-shadow: 0 2px 8px rgba(245,130,32,0.2); }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,130,32,0.3); }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+    th { background: linear-gradient(135deg, #34495e, #2c3e50); color: white; font-weight: 600; }
+    tr:hover { background: #f8f9fa; }
+    .status-done { color: #27ae60; font-weight: bold; }
+    .status-pending { color: #e74c3c; font-weight: bold; }
+    .summary-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #f58220; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .summary-card h3 { margin-bottom: 15px; color: #2c3e50; }
+    .progress-bar { background: #ecf0f1; height: 24px; border-radius: 12px; overflow: hidden; margin: 15px 0; }
+    .progress-fill { background: linear-gradient(135deg, #27ae60, #2ecc71); height: 100%; transition: width 0.5s ease; }
+    .delete-btn { background: linear-gradient(135deg, #e74c3c, #c0392b); padding: 8px 16px; font-size: 12px; border-radius: 6px; }
+    .edit-btn { background: linear-gradient(135deg, #3498db, #2980b9); padding: 8px 16px; font-size: 12px; margin-right: 8px; border-radius: 6px; }
+    .filter-section { background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #dee2e6; }
+    .filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: end; }
+    .filter-row .form-group { margin-bottom: 0; }
+    .task-detail { background: white; padding: 15px; margin: 8px 0; border-left: 4px solid #f58220; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    h2, h3 { color: #2c3e50; font-weight: 600; }
+    h2 { font-size: 1.8em; margin-bottom: 20px; }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+    .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .modal-close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #95a5a6; }
+    .email-preview { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #dee2e6; font-family: monospace; white-space: pre-wrap; }
+    .copy-btn { background: linear-gradient(135deg, #17a2b8, #138496); margin-left: 10px; }
+    .task-input-group { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 3px solid #f58220; }
+    .task-input-group:first-child { margin-top: 0; }
+    @media (max-width: 768px) {
+      .container { padding: 15px; margin: 10px; }
+      .tabs { flex-direction: column; }
+      .filter-row { grid-template-columns: 1fr; }
+      h1 { font-size: 1.8em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Task Management Dashboard (Shared)</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('assign')">Assign Tasks</button>
+      <button class="tab" onclick="showTab('manage')">Manage Tasks</button>
+      <button class="tab" onclick="showTab('filter')">Custom Filter</button>
+      <button class="tab" onclick="showTab('daily')">Daily Summary</button>
+      <button class="tab" onclick="showTab('weekly')">Weekly Summary</button>
+      <button class="tab" onclick="showTab('monthly')">Monthly Summary</button>
+      <button class="tab" onclick="showTab('email')">Email Reports</button>
+      <button class="tab" onclick="showTab('backup')">Backup & Export</button>
+    </div>
+
+    <div id="assign" class="section active">
+      <h2>Assign New Task</h2>
+      <div class="form-group">
+        <label>Employee ID</label>
+        <input type="text" id="empId" placeholder="e.g., EMP001" onchange="loadEmployeeProfile()">
+      </div>
+      <div class="form-group">
+        <label>Employee Name <span id="nameOptional" style="color: #6c757d; font-size: 12px;"></span></label>
+        <input type="text" id="empName" placeholder="Enter name">
+      </div>
+      <div class="form-group">
+        <label>Employee Email <span id="emailOptional" style="color: #6c757d; font-size: 12px;">(Optional)</span></label>
+        <input type="email" id="empEmail" placeholder="employee@company.com">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="taskDate">
+      </div>
+      <div id="tasksContainer">
+        <div class="task-input-group">
+          <div class="form-group">
+            <label>Task Description 1</label>
+            <textarea class="task-desc" rows="2" placeholder="Enter task details"></textarea>
+          </div>
+        </div>
+      </div>
+      <div style="margin: 15px 0;">
+        <button onclick="addTaskInput()" style="background: #17a2b8;">+ Add Another Task</button>
+        <button onclick="removeTaskInput()" style="background: #dc3545;">- Remove Task</button>
+      </div>
+      <div class="filter-section" style="margin-top: 20px;">
+        <h3>📧 Email Notification (Optional)</h3>
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Sender Email</label>
+            <input type="email" id="assignSenderEmail" value="jayant.pahwa@collegedunia.com">
+          </div>
+          <div class="form-group">
+            <label>Send Assignment Email</label>
+            <select id="sendAssignmentEmail">
+              <option value="no">No, just assign tasks</option>
+              <option value="yes">Yes, send email notification</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button onclick="assignTasks()">Assign All Tasks</button>
+    </div>
+
+    <div id="manage" class="section">
+      <h2>Today's Tasks</h2>
+      <div id="taskList"></div>
+    </div>
+
+    <div id="filter" class="section">
+      <h2>Custom Filter</h2>
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Single Date (Optional)</label>
+            <input type="date" id="filterSingleDate">
+          </div>
+          <div class="form-group">
+            <label>OR Date Range From</label>
+            <input type="date" id="filterFromDate">
+          </div>
+          <div class="form-group">
+            <label>Date Range To</label>
+            <input type="date" id="filterToDate">
+          </div>
+        </div>
+        <div class="filter-row" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Filter by Employee ID (Optional)</label>
+            <input type="text" id="filterEmpId" placeholder="e.g., EMP001">
+          </div>
+          <div class="form-group">
+            <label>Filter by Status (Optional)</label>
+            <select id="filterStatus">
+              <option value="">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+          <button onclick="applyCustomFilter()">Apply Filter</button>
+          <button onclick="clearFilter()" style="background: #6c757d;">Clear</button>
+        </div>
+      </div>
+      <div id="filterResults"></div>
+    </div>
+
+    <div id="daily" class="section">
+      <h2>Daily Summary</h2>
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Select Date (Optional)</label>
+            <input type="date" id="dailyDate">
+          </div>
+          <div class="form-group">
+            <label>Filter by Employee ID (Optional)</label>
+            <input type="text" id="dailyEmpId" placeholder="e.g., EMP001">
+          </div>
+          <button onclick="showDailySummary()">View Summary</button>
+        </div>
+      </div>
+      <div id="dailySummaryContent"></div>
+    </div>
+
+    <div id="weekly" class="section">
+      <h2>Weekly Summary</h2>
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Select Week Start Date (Optional)</label>
+            <input type="date" id="weeklyDate">
+          </div>
+          <div class="form-group">
+            <label>Filter by Employee ID (Optional)</label>
+            <input type="text" id="weeklyEmpId" placeholder="e.g., EMP001">
+          </div>
+          <button onclick="showWeeklySummary()">View Summary</button>
+        </div>
+      </div>
+      <div id="weeklySummaryContent"></div>
+    </div>
+
+    <div id="monthly" class="section">
+      <h2>Monthly Summary</h2>
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Select Month (Optional)</label>
+            <input type="month" id="monthlyDate">
+          </div>
+          <div class="form-group">
+            <label>Filter by Employee ID (Optional)</label>
+            <input type="text" id="monthlyEmpId" placeholder="e.g., EMP001">
+          </div>
+          <button onclick="showMonthlySummary()">View Summary</button>
+        </div>
+      </div>
+      <div id="monthlySummaryContent"></div>
+    </div>
+
+    <div id="email" class="section">
+      <h2>📧 Email Reports</h2>
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Employee ID</label>
+            <input type="text" id="emailEmpId" placeholder="e.g., EMP001">
+          </div>
+          <div class="form-group">
+            <label>Report Type</label>
+            <select id="reportType" onchange="toggleDateFields()">
+              <option value="daily">Daily Summary</option>
+              <option value="weekly">Weekly Summary</option>
+              <option value="pending">Pending Tasks</option>
+              <option value="dateRange">Date Range Report</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-row" id="dateFields">
+          <div class="form-group" id="singleDateField">
+            <label>Select Date</label>
+            <input type="date" id="emailDate">
+          </div>
+          <div class="form-group" id="weekDateField" style="display: none;">
+            <label>Week Start Date</label>
+            <input type="date" id="emailWeekDate">
+          </div>
+          <div class="form-group" id="fromDateField" style="display: none;">
+            <label>From Date</label>
+            <input type="date" id="emailFromDate">
+          </div>
+          <div class="form-group" id="toDateField" style="display: none;">
+            <label>To Date</label>
+            <input type="date" id="emailToDate">
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="form-group">
+            <label>Sender Email</label>
+            <input type="email" id="senderEmail" value="jayant.pahwa@collegedunia.com">
+          </div>
+          <div class="form-group">
+            <label>Receiver Email</label>
+            <input type="email" id="receiverEmail" placeholder="employee@company.com">
+          </div>
+        </div>
+        <div class="filter-row">
+          <button onclick="generateEmailReport()">📧 Generate Report</button>
+          <button onclick="sendDirectEmail()" style="background: #28a745;">📤 Send Email</button>
+          <button onclick="copyEmailToClipboard()" class="copy-btn">📋 Copy to Clipboard</button>
+          <button onclick="showEmailSetup()" style="background: #6c757d;">⚙️ Setup Email</button>
+        </div>
+        <div id="emailSetupInfo" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+          <h4>🔧 Email Setup Required</h4>
+          <p><strong>To enable automatic email sending, you need to:</strong></p>
+          <ol>
+            <li>Create a free account at <a href="https://emailjs.com" target="_blank">EmailJS.com</a></li>
+            <li>Create an email service (Gmail, Outlook, etc.)</li>
+            <li>Create an email template with variables: from_email, to_email, subject, message, from_name</li>
+            <li>Replace the configuration in the code:</li>
+          </ol>
+          <pre style="background: #d4edda; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 12px;">✅ Updated Configuration (Jayant's Account)
+Public Key: n8_ZMBGUcsdqauH09
+Service ID: service_zqx3vwn (CORRECTED)
+Template ID: template_5at1vkm
+
+Account: jayant.pahwa@collegedunia.com</pre>
+          <p><strong>✅ EmailJS Setup Complete!</strong></p>
+          <p>Emails will now be sent from: <code>jayant.pahwa@collegedunia.com</code></p>
+          <p><strong>Template Variables:</strong> from_email, to_email, subject, message, from_name</p>
+          <p><strong>Without setup:</strong> System will use mailto (opens your email client)</p>
+          <button onclick="hideEmailSetup()" style="background: #6c757d; margin-top: 10px;">Close</button>
+        </div>
+      </div>
+      <div id="emailPreview"></div>
+    </div>
+
+    <div id="backup" class="section">
+      <h2>💾 Backup & Export Data</h2>
+      <div class="summary-card">
+        <h3>📊 Current Data Status</h3>
+        <p id="dataStatus"></p>
+      </div>
+      <div class="summary-card">
+        <h3>⬇️ Export Data</h3>
+        <p>Download your data as a backup file.</p>
+        <button onclick="exportData()">📥 Download Backup (JSON)</button>
+        <button onclick="exportToExcel()" style="background: #28a745; margin-left: 10px;">📊 Export to Excel (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeEditModal()">&times;</span>
+      <h2>Edit Task</h2>
+      <div class="form-group">
+        <label>Employee ID</label>
+        <input type="text" id="editEmpId">
+      </div>
+      <div class="form-group">
+        <label>Employee Name</label>
+        <input type="text" id="editEmpName">
+      </div>
+      <div class="form-group">
+        <label>Task Description</label>
+        <textarea id="editTaskDesc" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="editTaskDate">
+      </div>
+      <button onclick="saveEdit()">Save Changes</button>
+      <button onclick="closeEditModal()" style="background: #6c757d; margin-left: 10px;">Cancel</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBhedAiDxsiX2KtG9V0UIUhT7-p_JS8c7E",
+      authDomain: "task-dashboard-57a61.firebaseapp.com",
+      databaseURL: "https://task-dashboard-57a61-default-rtdb.firebaseio.com",
+      projectId: "task-dashboard-57a61",
+      storageBucket: "task-dashboard-57a61.firebasestorage.app",
+      messagingSenderId: "680196085818",
+      appId: "1:680196085818:web:d3fe00df6d3cd1a8213d03"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    let tasks = [];
+    let employees = {};
+    let editingTaskKey = null;
+    let taskCounter = 1;
+    
+    // EmailJS Configuration - Jayant's Account
+    const EMAILJS_PUBLIC_KEY = 'n8_ZMBGUcsdqauH09';
+    const EMAIL_SERVICE_ID = 'service_zqx3vwn';     // Fixed: was service_zqx3vwm
+    const EMAIL_TEMPLATE_ID = 'template_5at1vkm';
+    
+    // Initialize EmailJS
+    try {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+      console.log('📧 EmailJS initialized with key:', EMAILJS_PUBLIC_KEY);
+    } catch (error) {
+      console.error('❌ EmailJS initialization failed:', error);
+    }
+    
+    // Test EmailJS connection on load
+    function testEmailJSConnection() {
+      console.log('🔍 Testing EmailJS connection...');
+      console.log('Public Key:', EMAILJS_PUBLIC_KEY);
+      console.log('Service ID:', EMAIL_SERVICE_ID);
+      console.log('Template ID:', EMAIL_TEMPLATE_ID);
+      
+      return emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, {
+        from_email: 'test@test.com',
+        to_email: 'test@test.com',
+        subject: 'Test Connection',
+        message: 'Testing EmailJS connection',
+        from_name: 'Test'
+      }).then(
+        function(response) {
+          console.log('✅ EmailJS connection successful:', response);
+          return true;
+        },
+        function(error) {
+          console.error('❌ EmailJS connection failed:', error);
+          if (error.text && error.text.includes('Service ID')) {
+            console.error('⚠️ Service ID not found. Please check EmailJS dashboard.');
+          }
+          return false;
+        }
+      );
+    }
+
+    database.ref('tasks').on('value', (snapshot) => {
+      tasks = [];
+      snapshot.forEach((child) => {
+        tasks.push({ firebaseKey: child.key, ...child.val() });
+      });
+      buildEmployeeProfiles();
+    });
+    
+    function buildEmployeeProfiles() {
+      employees = {};
+      tasks.forEach(task => {
+        if (!employees[task.empId]) {
+          employees[task.empId] = {
+            empId: task.empId,
+            empName: task.empName,
+            empEmail: task.empEmail || null
+          };
+        } else {
+          // Update with latest non-null values
+          if (task.empName) employees[task.empId].empName = task.empName;
+          if (task.empEmail) employees[task.empId].empEmail = task.empEmail;
+        }
+      });
+    }
+    
+    function loadEmployeeProfile() {
+      const empId = document.getElementById('empId').value.trim();
+      if (empId && employees[empId]) {
+        const emp = employees[empId];
+        if (emp.empName) {
+          document.getElementById('empName').value = emp.empName;
+          document.getElementById('nameOptional').textContent = '(Auto-filled)';
+        }
+        if (emp.empEmail) {
+          document.getElementById('empEmail').value = emp.empEmail;
+          document.getElementById('emailOptional').textContent = '(Auto-filled)';
+        } else {
+          document.getElementById('emailOptional').textContent = '(Optional)';
+        }
+      } else {
+        document.getElementById('nameOptional').textContent = '';
+        document.getElementById('emailOptional').textContent = '(Optional)';
+      }
+    }
+    
+    function updateEmployeeProfile(empId, empName, empEmail) {
+      if (empId && empName) {
+        if (!employees[empId]) {
+          employees[empId] = {};
+        }
+        employees[empId].empId = empId;
+        employees[empId].empName = empName;
+        if (empEmail) {
+          employees[empId].empEmail = empEmail;
+        }
+      }
+    }
+    
+    function addTaskInput() {
+      taskCounter++;
+      const container = document.getElementById('tasksContainer');
+      const newTaskDiv = document.createElement('div');
+      newTaskDiv.className = 'task-input-group';
+      newTaskDiv.innerHTML = `
+        <div class="form-group">
+          <label>Task Description ${taskCounter}</label>
+          <textarea class="task-desc" rows="2" placeholder="Enter task details"></textarea>
+        </div>
+      `;
+      container.appendChild(newTaskDiv);
+    }
+    
+    function removeTaskInput() {
+      const container = document.getElementById('tasksContainer');
+      const taskGroups = container.querySelectorAll('.task-input-group');
+      if (taskGroups.length > 1) {
+        container.removeChild(taskGroups[taskGroups.length - 1]);
+        taskCounter--;
+      }
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      
+      // Find and activate the correct tab button
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(t => {
+        if (t.textContent.toLowerCase().includes(tab) || 
+            (tab === 'assign' && t.textContent.includes('Assign')) ||
+            (tab === 'manage' && t.textContent.includes('Manage')) ||
+            (tab === 'filter' && t.textContent.includes('Filter')) ||
+            (tab === 'daily' && t.textContent.includes('Daily')) ||
+            (tab === 'weekly' && t.textContent.includes('Weekly')) ||
+            (tab === 'monthly' && t.textContent.includes('Monthly')) ||
+            (tab === 'email' && t.textContent.includes('Email')) ||
+            (tab === 'backup' && t.textContent.includes('Backup'))) {
+          t.classList.add('active');
+        }
+      });
+      
+      // Save current tab to localStorage
+      localStorage.setItem('currentTab', tab);
+      
+      if (tab === 'manage') loadTodayTasks();
+      if (tab === 'daily') {
+        document.getElementById('dailyDate').value = new Date().toISOString().split('T')[0];
+        showDailySummary();
+      }
+      if (tab === 'weekly') {
+        const today = new Date();
+        const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+        document.getElementById('weeklyDate').value = monday.toISOString().split('T')[0];
+        showWeeklySummary();
+      }
+      if (tab === 'monthly') {
+        document.getElementById('monthlyDate').value = new Date().toISOString().slice(0, 7);
+        showMonthlySummary();
+      }
+      if (tab === 'backup') showDataStatus();
+      if (tab === 'filter') clearFilter();
+      if (tab === 'email') {
+        document.getElementById('emailDate').value = new Date().toISOString().split('T')[0];
+      }
+    }
+
+    function assignTasks() {
+      const empId = document.getElementById('empId').value.trim();
+      const empName = document.getElementById('empName').value.trim();
+      const empEmail = document.getElementById('empEmail').value.trim();
+      const taskDate = document.getElementById('taskDate').value;
+      const senderEmail = document.getElementById('assignSenderEmail').value.trim();
+      const sendEmail = document.getElementById('sendAssignmentEmail').value;
+      
+      if (!empId || !empName || !taskDate) {
+        alert('Please fill Employee ID, Name, and Date');
+        return;
+      }
+      
+      const taskDescs = document.querySelectorAll('.task-desc');
+      const validTasks = [];
+      
+      taskDescs.forEach(textarea => {
+        const desc = textarea.value.trim();
+        if (desc) {
+          validTasks.push(desc);
+        }
+      });
+      
+      if (validTasks.length === 0) {
+        alert('Please enter at least one task description');
+        return;
+      }
+      
+      if (sendEmail === 'yes' && (!senderEmail || !empEmail)) {
+        alert('Please provide both sender email and employee email for notification');
+        return;
+      }
+      
+      // Save all tasks
+      const promises = validTasks.map(taskDesc => {
+        return database.ref('tasks').push({
+          id: Date.now() + Math.random(),
+          empId,
+          empName,
+          empEmail: empEmail || null,
+          taskDesc,
+          date: taskDate,
+          status: 'Pending'
+        });
+      });
+      
+      Promise.all(promises).then(() => {
+        // Update employee profile with latest info
+        updateEmployeeProfile(empId, empName, empEmail);
+        
+        alert(`${validTasks.length} task(s) assigned successfully to ${empName}!`);
+        
+        // Send email notification if requested
+        if (sendEmail === 'yes') {
+          sendAssignmentEmail(empId, empName, empEmail, validTasks, taskDate, senderEmail);
+        }
+        
+        clearTaskForm();
+      }).catch(error => {
+        alert('Error assigning tasks: ' + error.message);
+      });
+    }
+    
+    function sendAssignmentEmail(empId, empName, empEmail, tasks, taskDate, senderEmail) {
+      const subject = `New Task Assignment - ${empName} (${empId})`;
+      let body = `Dear ${empName},\n\n`;
+      body += `You have been assigned ${tasks.length} new task(s) for ${new Date(taskDate).toLocaleDateString()}:\n\n`;
+      
+      tasks.forEach((task, index) => {
+        body += `${index + 1}. ${task}\n`;
+      });
+      
+      body += `\nPlease complete these tasks by the assigned date.\n\n`;
+      body += `Best regards,\n${senderEmail}\n\n`;
+      body += `---\nSent via Task Management System`;
+      
+      // Send via EmailJS with better error handling
+      emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, {
+        from_email: senderEmail,
+        to_email: empEmail,
+        subject: subject,
+        message: body,
+        from_name: senderEmail.split('@')[0]
+      }).then(
+        function(response) {
+          console.log('✅ Assignment Email Success:', response);
+          alert('✅ Tasks assigned and email notification sent!');
+        },
+        function(error) {
+          console.error('❌ Assignment Email Error:', error);
+          
+          let errorMsg = 'Email notification failed';
+          if (error.text) {
+            errorMsg += ': ' + error.text;
+          }
+          
+          // Fallback to mailto
+          const mailtoLink = `mailto:${empEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+          window.open(mailtoLink);
+          alert(`⚠️ Tasks assigned! ${errorMsg} - opened email client as fallback.`);
+        }
+      );
+    }
+    
+    function clearTaskForm() {
+      document.getElementById('empId').value = '';
+      document.getElementById('empName').value = '';
+      document.getElementById('empEmail').value = '';
+      document.querySelectorAll('.task-desc').forEach(textarea => textarea.value = '');
+      document.getElementById('nameOptional').textContent = '';
+      document.getElementById('emailOptional').textContent = '(Optional)';
+      
+      // Reset to single task input
+      const container = document.getElementById('tasksContainer');
+      container.innerHTML = `
+        <div class="task-input-group">
+          <div class="form-group">
+            <label>Task Description 1</label>
+            <textarea class="task-desc" rows="2" placeholder="Enter task details"></textarea>
+          </div>
+        </div>
+      `;
+      taskCounter = 1;
+    }
+
+    function loadTodayTasks() {
+      const today = new Date().toISOString().split('T')[0];
+      const todayDate = new Date(today);
+      
+      // Only show pending tasks (today's tasks + overdue pending tasks)
+      const todayTasks = tasks.filter(t => {
+        const taskDate = new Date(t.date);
+        return t.status === 'Pending' && ((t.date === today) || (taskDate < todayDate));
+      });
+      
+      // Sort tasks by employee ID
+      todayTasks.sort((a, b) => a.empId.localeCompare(b.empId));
+      
+      let html = '<table><tr><th>ID</th><th>Name</th><th>Task</th><th>Date</th><th>Status</th><th>Action</th></tr>';
+      todayTasks.forEach(task => {
+        const isPastDue = task.date < today;
+        html += `<tr style="${isPastDue ? 'background: #fff3cd;' : ''}">
+          <td>${task.empId}</td>
+          <td>${task.empName}</td>
+          <td>${task.taskDesc}${isPastDue ? ' <span style="color: red;">(OVERDUE)</span>' : ''}</td>
+          <td>${task.date}</td>
+          <td class="status-pending">${task.status}</td>
+          <td>
+            <button onclick="markTask('${task.firebaseKey}', 'Done')">✓ Done</button>
+            <button onclick="markTask('${task.firebaseKey}', 'Pending')" class="delete-btn">✗ Not Done</button>
+            <button onclick="openEditModal('${task.firebaseKey}')" class="edit-btn">✏️ Edit</button>
+            <button onclick="deleteTask('${task.firebaseKey}')" class="delete-btn">🗑️ Delete</button>
+          </td>
+        </tr>`;
+      });
+      html += '</table>';
+      document.getElementById('taskList').innerHTML = html || '<p>No pending tasks for today.</p>';
+    }
+
+    function markTask(firebaseKey, status) {
+      if (status === 'Done') {
+        // Instant UI removal
+        const button = event.target;
+        const row = button.closest('tr');
+        row.style.transition = 'opacity 0.3s ease';
+        row.style.opacity = '0';
+        setTimeout(() => {
+          if (row.parentNode) row.parentNode.removeChild(row);
+        }, 300);
+      }
+      
+      const updateData = { status };
+      if (status === 'Done') {
+        updateData.completedDate = new Date().toISOString().split('T')[0];
+      }
+      database.ref('tasks/' + firebaseKey).update(updateData);
+      
+      if (status === 'Done') {
+        setTimeout(() => alert('✅ Task marked as Done!'), 100);
+      } else {
+        alert('Task will carry forward');
+      }
+    }
+
+    function openEditModal(firebaseKey) {
+      const task = tasks.find(t => t.firebaseKey === firebaseKey);
+      if (!task) return;
+      
+      editingTaskKey = firebaseKey;
+      document.getElementById('editEmpId').value = task.empId;
+      document.getElementById('editEmpName').value = task.empName;
+      document.getElementById('editTaskDesc').value = task.taskDesc;
+      document.getElementById('editTaskDate').value = task.date;
+      document.getElementById('editModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+      editingTaskKey = null;
+    }
+
+    function saveEdit() {
+      if (!editingTaskKey) return;
+      
+      const empId = document.getElementById('editEmpId').value;
+      const empName = document.getElementById('editEmpName').value;
+      const taskDesc = document.getElementById('editTaskDesc').value;
+      const taskDate = document.getElementById('editTaskDate').value;
+
+      if (!empId || !empName || !taskDesc || !taskDate) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      database.ref('tasks/' + editingTaskKey).update({
+        empId,
+        empName,
+        taskDesc,
+        date: taskDate
+      });
+
+      alert('Task updated successfully!');
+      closeEditModal();
+      loadTodayTasks();
+    }
+
+    function deleteTask(firebaseKey) {
+      if (confirm('Are you sure you want to delete this task?')) {
+        database.ref('tasks/' + firebaseKey).remove();
+        alert('Task deleted!');
+        loadTodayTasks();
+      }
+    }
+
+    function showDailySummary() {
+      const date = document.getElementById('dailyDate').value || new Date().toISOString().split('T')[0];
+      const empIdFilter = document.getElementById('dailyEmpId').value.trim();
+      
+      let dayTasks = tasks.filter(t => t.date === date);
+      if (empIdFilter) dayTasks = dayTasks.filter(t => t.empId === empIdFilter);
+      
+      const employees = {};
+      dayTasks.forEach(task => {
+        if (!employees[task.empId]) {
+          employees[task.empId] = { name: task.empName, total: 0, done: 0, tasks: [] };
+        }
+        employees[task.empId].total++;
+        if (task.status === 'Done') employees[task.empId].done++;
+        employees[task.empId].tasks.push(task);
+      });
+
+      const totalTasks = dayTasks.length;
+      const completedTasks = dayTasks.filter(t => t.status === 'Done').length;
+      const efficiency = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
+
+      let html = `
+        <div class="summary-card">
+          <h3>📅 ${date} - Overall Efficiency: ${efficiency}%</h3>
+          <p>Tasks Assigned: ${totalTasks} | Completed: ${completedTasks}</p>
+          <div class="progress-bar"><div class="progress-fill" style="width: ${efficiency}%"></div></div>
+          <button onclick="shareSummary('${date}', ${efficiency}, ${totalTasks}, ${completedTasks})">📤 Share Summary</button>
+        </div>
+        <table><tr><th>ID</th><th>Name</th><th>Assigned</th><th>Completed</th><th>Percentage</th></tr>`;
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        const percent = ((emp.done / emp.total) * 100).toFixed(1);
+        html += `<tr><td>${id}</td><td>${emp.name}</td><td>${emp.total}</td><td>${emp.done}</td><td>${percent}%</td></tr>`;
+      }
+      html += '</table><h3 style="margin-top: 20px;">Task Details:</h3>';
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        html += `<h4 style="margin-top: 15px;">${emp.name} (${id})</h4>`;
+        emp.tasks.forEach(task => {
+          html += `<div class="task-detail">
+            <strong>${task.taskDesc}</strong><br>
+            <small>Date: ${task.date} | Status: <span class="${task.status === 'Done' ? 'status-done' : 'status-pending'}">${task.status}</span></small>
+          </div>`;
+        });
+      }
+      
+      document.getElementById('dailySummaryContent').innerHTML = html || '<p>No tasks found for this date.</p>';
+    }
+
+    function showWeeklySummary() {
+      const inputDate = document.getElementById('weeklyDate').value;
+      const startDate = inputDate ? new Date(inputDate) : (() => {
+        const today = new Date();
+        return new Date(today.setDate(today.getDate() - today.getDay() + 1));
+      })();
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      const empIdFilter = document.getElementById('weeklyEmpId').value.trim();
+      
+      let weekTasks = tasks.filter(t => {
+        const taskDate = new Date(t.date);
+        return taskDate >= startDate && taskDate <= endDate;
+      });
+      if (empIdFilter) weekTasks = weekTasks.filter(t => t.empId === empIdFilter);
+
+      const employees = {};
+      weekTasks.forEach(task => {
+        if (!employees[task.empId]) {
+          employees[task.empId] = { name: task.empName, total: 0, done: 0, tasks: [] };
+        }
+        employees[task.empId].total++;
+        if (task.status === 'Done') employees[task.empId].done++;
+        employees[task.empId].tasks.push(task);
+      });
+
+      const totalTasks = weekTasks.length;
+      const completedTasks = weekTasks.filter(t => t.status === 'Done').length;
+      const efficiency = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
+
+      let html = `
+        <div class="summary-card">
+          <h3>📊 Week: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</h3>
+          <p>Efficiency: ${efficiency}% | Tasks: ${totalTasks} | Completed: ${completedTasks}</p>
+          <div class="progress-bar"><div class="progress-fill" style="width: ${efficiency}%"></div></div>
+        </div>
+        <table><tr><th>ID</th><th>Name</th><th>Assigned</th><th>Completed</th><th>Percentage</th></tr>`;
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        const percent = ((emp.done / emp.total) * 100).toFixed(1);
+        html += `<tr><td>${id}</td><td>${emp.name}</td><td>${emp.total}</td><td>${emp.done}</td><td>${percent}%</td></tr>`;
+      }
+      html += '</table><h3 style="margin-top: 20px;">Task Details:</h3>';
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        html += `<h4 style="margin-top: 15px;">${emp.name} (${id})</h4>`;
+        emp.tasks.forEach(task => {
+          html += `<div class="task-detail">
+            <strong>${task.taskDesc}</strong><br>
+            <small>Date: ${task.date} | Status: <span class="${task.status === 'Done' ? 'status-done' : 'status-pending'}">${task.status}</span></small>
+          </div>`;
+        });
+      }
+      
+      document.getElementById('weeklySummaryContent').innerHTML = html || '<p>No tasks found for this week.</p>';
+    }
+
+    function showMonthlySummary() {
+      const monthInput = document.getElementById('monthlyDate').value || new Date().toISOString().slice(0, 7);
+      const [year, month] = monthInput.split('-');
+      const empIdFilter = document.getElementById('monthlyEmpId').value.trim();
+      
+      let monthTasks = tasks.filter(t => {
+        const taskDate = new Date(t.date);
+        return taskDate.getFullYear() == year && (taskDate.getMonth() + 1) == month;
+      });
+      if (empIdFilter) monthTasks = monthTasks.filter(t => t.empId === empIdFilter);
+
+      const employees = {};
+      monthTasks.forEach(task => {
+        if (!employees[task.empId]) {
+          employees[task.empId] = { name: task.empName, total: 0, done: 0, tasks: [] };
+        }
+        employees[task.empId].total++;
+        if (task.status === 'Done') employees[task.empId].done++;
+        employees[task.empId].tasks.push(task);
+      });
+
+      const totalTasks = monthTasks.length;
+      const completedTasks = monthTasks.filter(t => t.status === 'Done').length;
+      const efficiency = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
+
+      let html = `
+        <div class="summary-card">
+          <h3>📈 Month: ${monthInput}</h3>
+          <p>Efficiency: ${efficiency}% | Tasks: ${totalTasks} | Completed: ${completedTasks}</p>
+          <div class="progress-bar"><div class="progress-fill" style="width: ${efficiency}%"></div></div>
+        </div>
+        <table><tr><th>ID</th><th>Name</th><th>Assigned</th><th>Completed</th><th>Percentage</th></tr>`;
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        const percent = ((emp.done / emp.total) * 100).toFixed(1);
+        html += `<tr><td>${id}</td><td>${emp.name}</td><td>${emp.total}</td><td>${emp.done}</td><td>${percent}%</td></tr>`;
+      }
+      html += '</table><h3 style="margin-top: 20px;">Task Details:</h3>';
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        html += `<h4 style="margin-top: 15px;">${emp.name} (${id})</h4>`;
+        emp.tasks.forEach(task => {
+          html += `<div class="task-detail">
+            <strong>${task.taskDesc}</strong><br>
+            <small>Date: ${task.date} | Status: <span class="${task.status === 'Done' ? 'status-done' : 'status-pending'}">${task.status}</span></small>
+          </div>`;
+        });
+      }
+      
+      document.getElementById('monthlySummaryContent').innerHTML = html || '<p>No tasks found for this month.</p>';
+    }
+
+    function applyCustomFilter() {
+      const singleDate = document.getElementById('filterSingleDate').value;
+      const fromDate = document.getElementById('filterFromDate').value;
+      const toDate = document.getElementById('filterToDate').value;
+      const empId = document.getElementById('filterEmpId').value.trim();
+      const status = document.getElementById('filterStatus').value;
+
+      let filteredTasks = tasks;
+
+      if (singleDate) {
+        filteredTasks = filteredTasks.filter(t => t.date === singleDate);
+      } else if (fromDate && toDate) {
+        filteredTasks = filteredTasks.filter(t => t.date >= fromDate && t.date <= toDate);
+      } else if (fromDate) {
+        filteredTasks = filteredTasks.filter(t => t.date >= fromDate);
+      } else if (toDate) {
+        filteredTasks = filteredTasks.filter(t => t.date <= toDate);
+      }
+
+      if (empId) filteredTasks = filteredTasks.filter(t => t.empId === empId);
+      if (status) filteredTasks = filteredTasks.filter(t => t.status === status);
+
+      const employees = {};
+      filteredTasks.forEach(task => {
+        if (!employees[task.empId]) {
+          employees[task.empId] = { name: task.empName, total: 0, done: 0, tasks: [] };
+        }
+        employees[task.empId].total++;
+        if (task.status === 'Done') employees[task.empId].done++;
+        employees[task.empId].tasks.push(task);
+      });
+
+      const totalTasks = filteredTasks.length;
+      const completedTasks = filteredTasks.filter(t => t.status === 'Done').length;
+      const efficiency = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
+
+      let dateRange = singleDate ? singleDate : (fromDate && toDate ? `${fromDate} to ${toDate}` : (fromDate ? `From ${fromDate}` : (toDate ? `Until ${toDate}` : 'All dates')));
+
+      let html = `
+        <div class="summary-card">
+          <h3>📊 Filter Results: ${dateRange}</h3>
+          <p>Total Tasks: ${totalTasks} | Completed: ${completedTasks} | Efficiency: ${efficiency}%</p>
+          <div class="progress-bar"><div class="progress-fill" style="width: ${efficiency}%"></div></div>
+        </div>
+        <table><tr><th>ID</th><th>Name</th><th>Assigned</th><th>Completed</th><th>Percentage</th></tr>`;
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        const percent = ((emp.done / emp.total) * 100).toFixed(1);
+        html += `<tr><td>${id}</td><td>${emp.name}</td><td>${emp.total}</td><td>${emp.done}</td><td>${percent}%</td></tr>`;
+      }
+      html += '</table><h3 style="margin-top: 20px;">Task Details:</h3>';
+      
+      for (let id in employees) {
+        const emp = employees[id];
+        html += `<h4 style="margin-top: 15px;">${emp.name} (${id})</h4>`;
+        emp.tasks.forEach(task => {
+          html += `<div class="task-detail">
+            <strong>${task.taskDesc}</strong><br>
+            <small>Date: ${task.date} | Status: <span class="${task.status === 'Done' ? 'status-done' : 'status-pending'}">${task.status}</span></small>
+          </div>`;
+        });
+      }
+      
+      document.getElementById('filterResults').innerHTML = html || '<p>No tasks found matching the filter criteria.</p>';
+    }
+
+    function clearFilter() {
+      document.getElementById('filterSingleDate').value = '';
+      document.getElementById('filterFromDate').value = '';
+      document.getElementById('filterToDate').value = '';
+      document.getElementById('filterEmpId').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterResults').innerHTML = '<p>Apply filters to see results.</p>';
+    }
+
+    function shareSummary(date, efficiency, total, completed) {
+      const text = `📊 Daily Summary - ${date}\n\n✅ Efficiency: ${efficiency}%\n📋 Tasks Assigned: ${total}\n✓ Completed: ${completed}\n\nGenerated by Task Dashboard`;
+      
+      if (navigator.share) {
+        navigator.share({ title: 'Daily Summary', text });
+      } else {
+        navigator.clipboard.writeText(text);
+        alert('Summary copied to clipboard!');
+      }
+    }
+
+    function showDataStatus() {
+      const totalTasks = tasks.length;
+      const completed = tasks.filter(t => t.status === 'Done').length;
+      const pending = tasks.filter(t => t.status === 'Pending').length;
+      const employees = [...new Set(tasks.map(t => t.empId))].length;
+      
+      document.getElementById('dataStatus').innerHTML = `
+        <strong>Total Tasks:</strong> ${totalTasks}<br>
+        <strong>Completed:</strong> ${completed} | <strong>Pending:</strong> ${pending}<br>
+        <strong>Total Employees:</strong> ${employees}<br>
+        <strong>Storage:</strong> Firebase Cloud (Shared across all users)
+      `;
+    }
+
+    function exportData() {
+      const dataStr = JSON.stringify(tasks, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `task-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      alert('Backup downloaded successfully!');
+    }
+
+    function exportToExcel() {
+      let csv = 'Employee ID,Employee Name,Task Description,Date,Status\n';
+      tasks.forEach(task => {
+        csv += `"${task.empId}","${task.empName}","${task.taskDesc}","${task.date}","${task.status}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `task-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      alert('Excel file downloaded successfully!');
+    }
+
+    function getTaskStatusDisplay(task) {
+      if (task.status === 'Done') {
+        if (task.completedDate) {
+          const assignedDate = new Date(task.date);
+          const completedDate = new Date(task.completedDate);
+          const daysDiff = Math.ceil((completedDate - assignedDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff === 0) {
+            return `Done on ${task.completedDate} (On time)`;
+          } else if (daysDiff > 0) {
+            return `Done on ${task.completedDate} (${daysDiff} day${daysDiff > 1 ? 's' : ''} late)`;
+          } else {
+            return `Done on ${task.completedDate} (Early)`;
+          }
+        } else {
+          return 'Done (date not tracked)';
+        }
+      }
+      return task.status;
+    }
+
+    function toggleDateFields() {
+      const reportType = document.getElementById('reportType').value;
+      const singleDate = document.getElementById('singleDateField');
+      const weekDate = document.getElementById('weekDateField');
+      const fromDate = document.getElementById('fromDateField');
+      const toDate = document.getElementById('toDateField');
+      
+      // Hide all fields first
+      singleDate.style.display = 'none';
+      weekDate.style.display = 'none';
+      fromDate.style.display = 'none';
+      toDate.style.display = 'none';
+      
+      // Show relevant fields
+      if (reportType === 'daily') {
+        singleDate.style.display = 'block';
+      } else if (reportType === 'weekly') {
+        weekDate.style.display = 'block';
+      } else if (reportType === 'dateRange') {
+        fromDate.style.display = 'block';
+        toDate.style.display = 'block';
+      }
+    }
+    
+    function generateEmailReport() {
+      const empId = document.getElementById('emailEmpId').value;
+      const reportType = document.getElementById('reportType').value;
+      
+      if (!empId) {
+        alert('Please enter Employee ID');
+        return;
+      }
+      
+      const reportContent = generateAdvancedReportContent(empId, reportType);
+      
+      document.getElementById('emailPreview').innerHTML = `
+        <h3>📧 Email Report Preview</h3>
+        <div class="email-preview">${reportContent}</div>
+      `;
+      
+      // Store for clipboard copy
+      window.currentEmailContent = reportContent;
+    }
+    
+    function copyEmailToClipboard() {
+      if (!window.currentEmailContent) {
+        alert('Please generate a report first');
+        return;
+      }
+      
+      navigator.clipboard.writeText(window.currentEmailContent).then(() => {
+        alert('Email content copied to clipboard!');
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = window.currentEmailContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Email content copied to clipboard!');
+      });
+    }
+    
+    function generateAdvancedReportContent(empId, reportType) {
+      const empTasks = tasks.filter(task => task.empId === empId);
+      const employee = empTasks.length > 0 ? empTasks[0] : null;
+      
+      if (!employee) {
+        return `No employee found with ID: ${empId}`;
+      }
+      
+      const empEmail = employee.empEmail || 'Not provided';
+      let content = `Subject: Task Report - ${employee.empName} (${empId})\n\n`;
+      content += `Dear ${employee.empName},\n\n`;
+      content += `Please find your task report below:\n\n`;
+      content += `Employee Details:\n`;
+      content += `- ID: ${empId}\n`;
+      content += `- Name: ${employee.empName}\n`;
+      content += `- Email: ${empEmail}\n`;
+      content += `- Report Generated: ${new Date().toLocaleString()}\n\n`;
+      
+      let filteredTasks = [];
+      let reportTitle = '';
+      
+      if (reportType === 'daily') {
+        const targetDate = document.getElementById('emailDate').value || new Date().toISOString().split('T')[0];
+        filteredTasks = empTasks.filter(task => task.date === targetDate);
+        reportTitle = `Daily Report for ${new Date(targetDate).toLocaleDateString()}`;
+      } else if (reportType === 'weekly') {
+        const weekStart = document.getElementById('emailWeekDate').value ? 
+          new Date(document.getElementById('emailWeekDate').value) : (() => {
+            const today = new Date();
+            return new Date(today.setDate(today.getDate() - today.getDay() + 1));
+          })();
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        filteredTasks = empTasks.filter(task => {
+          const taskDate = new Date(task.date);
+          return taskDate >= weekStart && taskDate <= weekEnd;
+        });
+        reportTitle = `Weekly Report (${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()})`;
+      } else if (reportType === 'pending') {
+        filteredTasks = empTasks.filter(task => task.status === 'Pending');
+        reportTitle = 'All Pending Tasks Report';
+      } else if (reportType === 'dateRange') {
+        const fromDate = document.getElementById('emailFromDate').value;
+        const toDate = document.getElementById('emailToDate').value;
+        
+        if (!fromDate || !toDate) {
+          return 'Please select both From and To dates for date range report.';
+        }
+        
+        filteredTasks = empTasks.filter(task => {
+          return task.date >= fromDate && task.date <= toDate;
+        });
+        reportTitle = `Date Range Report (${new Date(fromDate).toLocaleDateString()} - ${new Date(toDate).toLocaleDateString()})`;
+      }
+      
+      content += `=== ${reportTitle} ===\n\n`;
+      
+      // Summary Statistics
+      const totalTasks = filteredTasks.length;
+      const doneTasks = filteredTasks.filter(t => t.status === 'Done');
+      const pendingTasks = filteredTasks.filter(t => t.status === 'Pending');
+      const efficiency = totalTasks > 0 ? Math.round((doneTasks.length / totalTasks) * 100) : 0;
+      
+      content += `📊 SUMMARY:\n`;
+      content += `- Total Tasks: ${totalTasks}\n`;
+      content += `- Completed: ${doneTasks.length}\n`;
+      content += `- Pending: ${pendingTasks.length}\n`;
+      content += `- Efficiency: ${efficiency}%\n\n`;
+      
+      // Completed Tasks
+      if (doneTasks.length > 0) {
+        content += `✅ COMPLETED TASKS (${doneTasks.length}):\n`;
+        doneTasks.forEach((task, index) => {
+          const completionInfo = task.completedDate ? 
+            ` (Completed: ${new Date(task.completedDate).toLocaleDateString()})` : '';
+          content += `${index + 1}. ${task.taskDesc}\n`;
+          content += `   📅 Assigned: ${new Date(task.date).toLocaleDateString()}${completionInfo}\n`;
+        });
+        content += '\n';
+      }
+      
+      // Pending Tasks
+      if (pendingTasks.length > 0) {
+        content += `⏳ PENDING TASKS (${pendingTasks.length}):\n`;
+        pendingTasks.forEach((task, index) => {
+          const today = new Date().toISOString().split('T')[0];
+          const isOverdue = task.date < today;
+          const overdueText = isOverdue ? ' ⚠️ OVERDUE' : '';
+          content += `${index + 1}. ${task.taskDesc}${overdueText}\n`;
+          content += `   📅 Due: ${new Date(task.date).toLocaleDateString()}\n`;
+        });
+        content += '\n';
+      }
+      
+      if (totalTasks === 0) {
+        content += 'No tasks found for the selected criteria.\n\n';
+      }
+      
+      content += `Best regards,\n`;
+      content += `Task Management System\n`;
+      content += `Generated on: ${new Date().toLocaleString()}`;
+      
+      return content;
+    }
+
+    function sendDirectEmail() {
+      const senderEmail = document.getElementById('senderEmail').value;
+      const receiverEmail = document.getElementById('receiverEmail').value;
+      
+      if (!senderEmail || !receiverEmail) {
+        alert('Please enter both sender and receiver email addresses');
+        return;
+      }
+      
+      if (!window.currentEmailContent) {
+        alert('Please generate a report first');
+        return;
+      }
+      
+      // Extract subject and body from email content
+      const lines = window.currentEmailContent.split('\n');
+      const subject = lines[0].replace('Subject: ', '');
+      const body = lines.slice(1).join('\n');
+      
+      // Show sending status
+      const sendButton = event.target;
+      const originalText = sendButton.innerHTML;
+      sendButton.innerHTML = '📤 Sending...';
+      sendButton.disabled = true;
+      
+      // Send email using EmailJS with better error handling
+      emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, {
+        from_email: senderEmail,
+        to_email: receiverEmail,
+        subject: subject,
+        message: body,
+        from_name: senderEmail.split('@')[0]
+      }).then(
+        function(response) {
+          console.log('✅ EmailJS Success:', response);
+          alert('✅ Email sent successfully!');
+          sendButton.innerHTML = originalText;
+          sendButton.disabled = false;
+        },
+        function(error) {
+          console.error('❌ EmailJS Error Details:', error);
+          console.error('Service ID:', EMAIL_SERVICE_ID);
+          console.error('Template ID:', EMAIL_TEMPLATE_ID);
+          
+          // Show detailed error message
+          let errorMsg = 'Email sending failed';
+          if (error.text) {
+            errorMsg += ': ' + error.text;
+          } else if (error.message) {
+            errorMsg += ': ' + error.message;
+          }
+          
+          // Fallback to mailto
+          const mailtoLink = `mailto:${receiverEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+          window.open(mailtoLink);
+          alert(`⚠️ ${errorMsg}\n\nOpening email client as fallback.`);
+          sendButton.innerHTML = originalText;
+          sendButton.disabled = false;
+        }
+      );
+    }
+    
+    function autoFillReceiverEmail() {
+      const empId = document.getElementById('emailEmpId').value.trim();
+      if (empId && employees[empId] && employees[empId].empEmail) {
+        document.getElementById('receiverEmail').value = employees[empId].empEmail;
+      } else {
+        document.getElementById('receiverEmail').value = '';
+      }
+    }
+    
+    function showEmailSetup() {
+      document.getElementById('emailSetupInfo').style.display = 'block';
+    }
+    
+    function hideEmailSetup() {
+      document.getElementById('emailSetupInfo').style.display = 'none';
+    }
+    
+    // Initialize date fields on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('taskDate').value = new Date().toISOString().split('T')[0];
+      toggleDateFields();
+      
+      // Test EmailJS connection
+      setTimeout(() => {
+        testEmailJSConnection().then(success => {
+          if (success) {
+            console.log('✅ EmailJS is ready for use');
+          } else {
+            console.warn('⚠️ EmailJS setup incomplete - using mailto fallback');
+            console.warn('📝 Follow NEW_EMAILJS_SETUP.md to complete setup');
+          }
+        });
+      }, 1000);
+      
+      // Restore last active tab
+      const savedTab = localStorage.getItem('currentTab');
+      if (savedTab && document.getElementById(savedTab)) {
+        showTab(savedTab);
+      }
+      
+      // Auto-fill receiver email when employee ID changes
+      document.getElementById('emailEmpId').addEventListener('input', autoFillReceiverEmail);
+      document.getElementById('emailEmpId').addEventListener('change', autoFillReceiverEmail);
+      
+      // Auto-fill employee email in assign tasks
+      document.getElementById('empId').addEventListener('input', loadEmployeeProfile);
+    });
+  </script>
+</body>
+</html>
